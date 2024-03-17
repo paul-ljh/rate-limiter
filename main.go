@@ -15,12 +15,6 @@ type ctxKey string
 
 const configCtxKey ctxKey = "config"
 
-type RateConfig struct {
-	Burst     int
-	Sustained int
-	Count     int
-}
-
 type Route struct {
 	Endpoint  string `json:"endpoint"`
 	Burst     int    `json:"burst"`
@@ -48,16 +42,6 @@ func loadConfig(config *[]Route) {
 		os.Exit(1)
 	}
 	fmt.Println("Successfully loaded config.json")
-}
-
-func initializeRateChecker(config *[]Route, rateChecker *RateChecker) {
-	for _, route := range *config {
-		(*rateChecker).rates[route.Endpoint] = Rate{
-			Burst:     route.Burst,
-			Sustained: route.Sustained,
-			Count:     0,
-		}
-	}
 }
 
 func take(w http.ResponseWriter, r *http.Request) {

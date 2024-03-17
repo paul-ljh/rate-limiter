@@ -41,3 +41,13 @@ func (r RateChecker) GetBurst(endpoint string) int {
 func (r RateChecker) GetSustained(endpoint string) int {
 	return r.rates[endpoint].Sustained
 }
+
+func initializeRateChecker(config *[]Route, rateChecker *RateChecker) {
+	for _, route := range *config {
+		(*rateChecker).rates[route.Endpoint] = Rate{
+			Burst:     route.Burst,
+			Sustained: route.Sustained,
+			Count:     0,
+		}
+	}
+}
