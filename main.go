@@ -16,8 +16,9 @@ type ctxKey string
 const configCtxKey ctxKey = "config"
 
 type RateConfig struct {
-	Burst     int `json:"burst"`
-	Sustained int `json:"sustained"`
+	Burst     int
+	Sustained int
+	Count     int
 }
 
 type Route struct {
@@ -49,33 +50,34 @@ func loadConfig(config *[]Route) {
 	fmt.Println("Successfully loaded config.json")
 }
 
-func transformConfig(config *[]Route, configMap *map[string]RateConfig) {
+func initializeRateChecker(config *[]Route, rateChecker *RateChecker) {
 	for _, route := range *config {
-		(*configMap)[route.Endpoint] = RateConfig{
+		(*rateChecker).rates[route.Endpoint] = Rate{
 			Burst:     route.Burst,
 			Sustained: route.Sustained,
+			Count:     0,
 		}
 	}
 }
 
 func take(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	config := *(ctx.Value(configCtxKey).(*map[string]RateConfig))
+	rateChecker := *(ctx.Value(configCtxKey).(*RateChecker))
 
 	endpoint := r.PostFormValue("endpoint")
 	if endpoint == "" {
 		io.WriteString(w, fmt.Sprintln("You must provide endpoint in your request body"))
-	} else if _, ok := config[endpoint]; !ok {
-		io.WriteString(w, fmt.Sprintln("Invalid endpoint in your request body"))
-	} else {
+	} else if rateChecker.IsEndpointValid(endpoint) {
 		io.WriteString(w,
 			fmt.Sprintf(
 				"The rate limit config for endpoint %s is: {Burst: %d, Sustained: %d}\n",
 				endpoint,
-				config[endpoint].Burst,
-				config[endpoint].Sustained,
+				rateChecker.GetBurst(endpoint),
+				rateChecker.GetSustained(endpoint),
 			),
 		)
+	} else {
+		io.WriteString(w, fmt.Sprintln("Invalid endpoint in your request body"))
 	}
 	fmt.Printf("Checking rate limit for endpoint: %s\n", endpoint)
 }
@@ -84,8 +86,10 @@ func main() {
 	config := []Route{}
 	loadConfig(&config)
 
-	configMap := map[string]RateConfig{}
-	transformConfig(&config, &configMap)
+	rateChecker := RateChecker{
+		rates: map[string]Rate{},
+	}
+	initializeRateChecker(&config, &rateChecker)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/take", take)
@@ -95,7 +99,7 @@ func main() {
 		Addr:    ":3333",
 		Handler: mux,
 		BaseContext: func(l net.Listener) context.Context {
-			ctx = context.WithValue(ctx, configCtxKey, &configMap)
+			ctx = context.WithValue(ctx, configCtxKey, &rateChecker)
 			return ctx
 		},
 	}
