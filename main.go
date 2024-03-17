@@ -38,8 +38,11 @@ func loadConfig(config *[]Route) {
 	fmt.Println("Successfully loaded config.json")
 }
 
-func take(w http.ResponseWriter, _ *http.Request) {
-	io.WriteString(w, "Take!\n")
+func take(w http.ResponseWriter, r *http.Request) {
+	endpoint := r.PostFormValue("endpoint")
+	fmt.Printf("Checking rate limit for endpoint: %s\n", endpoint)
+
+	io.WriteString(w, "Check my boi\n")
 }
 
 func main() {

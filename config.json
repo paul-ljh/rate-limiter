@@ -5,7 +5,7 @@
     "sustained" : 60
   },
   {
-    "endpoint" : "INDEX users",
+    "endpoint" : "GET users",
     "burst" : 100,
     "sustained" : 60
   }
