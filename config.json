@@ -1,11 +1,11 @@
 [
   {
-    "endpoint" : "/try/:id",
+    "endpoint" : "GET users/:id",
     "burst" : 100,
     "sustained" : 60
   },
   {
-    "endpoint" : "/list/:id",
+    "endpoint" : "INDEX users",
     "burst" : 100,
     "sustained" : 60
   }

@@ -10,7 +10,7 @@ An algorithm that seems fit for this approach is what's called Token Bucket. Fee
 # Requirements
 Please implement a small service that:
 
-Loads the configuration represented in `config.json` every time it starts. In there you will find an array at `rateLimitsPerEndpoint` with a configuration for each route template the service should provide a rate limit for:
+Loads the configuration represented in `config.json` every time it starts. In there you will find an array with a configuration for each route template the service should provide a rate limit for:
 - `endpoint`: route template being limited, acts as a key provided by the caller to check and consume its request tokens
 - `burst`: the number of burst requests allowed
 - `sustained`: the number of sustained requested per minute.
