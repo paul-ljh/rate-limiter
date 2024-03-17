@@ -1,0 +1,12 @@
+[
+  {
+    "endpoint" : "/try/:id",
+    "burst" : 100,
+    "sustained" : 60
+  },
+  {
+    "endpoint" : "/list/:id",
+    "burst" : 100,
+    "sustained" : 60
+  }
+]
