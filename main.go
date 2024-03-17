@@ -2,8 +2,10 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 )
 
@@ -17,7 +19,7 @@ func loadConfig(config *[]Route) {
 	configFile, err := os.Open("config.json")
 	if err != nil {
 		fmt.Println(err)
-		return
+		os.Exit(1)
 	}
 	fmt.Println("Successfully opened config.json")
 	defer configFile.Close()
@@ -25,18 +27,37 @@ func loadConfig(config *[]Route) {
 	configBytes, err := io.ReadAll(configFile)
 	if err != nil {
 		fmt.Println(err)
-		return
+		os.Exit(1)
 	}
 	fmt.Println("Successfully read config.json")
 
 	if err := json.Unmarshal(configBytes, &config); err != nil {
 		fmt.Println(err)
-		return
+		os.Exit(1)
 	}
 	fmt.Println("Successfully loaded config.json")
+}
+
+func take(w http.ResponseWriter, _ *http.Request) {
+	io.WriteString(w, "Take!\n")
 }
 
 func main() {
 	config := []Route{}
 	loadConfig(&config)
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/take", take)
+
+	server := &http.Server{
+		Addr:    ":3333",
+		Handler: mux,
+	}
+
+	err := server.ListenAndServe()
+	if errors.Is(err, http.ErrServerClosed) {
+		fmt.Println("Server closed")
+	} else if err != nil {
+		fmt.Printf("error listening for server: %s\n", err)
+	}
 }
