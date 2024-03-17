@@ -9,6 +9,11 @@ import (
 	"os"
 )
 
+type RateConfig struct {
+	Burst     int `json:"burst"`
+	Sustained int `json:"sustained"`
+}
+
 type Route struct {
 	Endpoint  string `json:"endpoint"`
 	Burst     int    `json:"burst"`
@@ -38,6 +43,15 @@ func loadConfig(config *[]Route) {
 	fmt.Println("Successfully loaded config.json")
 }
 
+func transformConfig(config *[]Route, configMap *map[string]RateConfig) {
+	for _, route := range *config {
+		(*configMap)[route.Endpoint] = RateConfig{
+			Burst:     route.Burst,
+			Sustained: route.Sustained,
+		}
+	}
+}
+
 func take(w http.ResponseWriter, r *http.Request) {
 	endpoint := r.PostFormValue("endpoint")
 	fmt.Printf("Checking rate limit for endpoint: %s\n", endpoint)
@@ -48,6 +62,9 @@ func take(w http.ResponseWriter, r *http.Request) {
 func main() {
 	config := []Route{}
 	loadConfig(&config)
+
+	configMap := map[string]RateConfig{}
+	transformConfig(&config, &configMap)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/take", take)
