@@ -1,13 +1,19 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"os"
 )
+
+type ctxKey string
+
+const configCtxKey ctxKey = "config"
 
 type RateConfig struct {
 	Burst     int `json:"burst"`
@@ -53,10 +59,25 @@ func transformConfig(config *[]Route, configMap *map[string]RateConfig) {
 }
 
 func take(w http.ResponseWriter, r *http.Request) {
-	endpoint := r.PostFormValue("endpoint")
-	fmt.Printf("Checking rate limit for endpoint: %s\n", endpoint)
+	ctx := r.Context()
+	config := *(ctx.Value(configCtxKey).(*map[string]RateConfig))
 
-	io.WriteString(w, "Check my boi\n")
+	endpoint := r.PostFormValue("endpoint")
+	if endpoint == "" {
+		io.WriteString(w, fmt.Sprintln("You must provide endpoint in your request body"))
+	} else if _, ok := config[endpoint]; !ok {
+		io.WriteString(w, fmt.Sprintln("Invalid endpoint in your request body"))
+	} else {
+		io.WriteString(w,
+			fmt.Sprintf(
+				"The rate limit config for endpoint %s is: {Burst: %d, Sustained: %d}\n",
+				endpoint,
+				config[endpoint].Burst,
+				config[endpoint].Sustained,
+			),
+		)
+	}
+	fmt.Printf("Checking rate limit for endpoint: %s\n", endpoint)
 }
 
 func main() {
@@ -69,9 +90,14 @@ func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/take", take)
 
+	ctx := context.Background()
 	server := &http.Server{
 		Addr:    ":3333",
 		Handler: mux,
+		BaseContext: func(l net.Listener) context.Context {
+			ctx = context.WithValue(ctx, configCtxKey, &configMap)
+			return ctx
+		},
 	}
 
 	err := server.ListenAndServe()
