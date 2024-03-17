@@ -13,7 +13,7 @@ type Route struct {
 	Sustained int    `json:"sustained"`
 }
 
-func main() {
+func loadConfig(config *[]Route) {
 	configFile, err := os.Open("config.json")
 	if err != nil {
 		fmt.Println(err)
@@ -29,10 +29,14 @@ func main() {
 	}
 	fmt.Println("Successfully read config.json")
 
-	config := []Route{}
 	if err := json.Unmarshal(configBytes, &config); err != nil {
 		fmt.Println(err)
 		return
 	}
 	fmt.Println("Successfully loaded config.json")
+}
+
+func main() {
+	config := []Route{}
+	loadConfig(&config)
 }
