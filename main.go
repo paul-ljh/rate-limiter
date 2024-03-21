@@ -52,14 +52,25 @@ func take(w http.ResponseWriter, r *http.Request) {
 	if endpoint == "" {
 		io.WriteString(w, fmt.Sprintln("You must provide endpoint in your request body"))
 	} else if rateChecker.IsEndpointValid(endpoint) {
-		io.WriteString(w,
-			fmt.Sprintf(
-				"The rate limit config for endpoint %s is: {Burst: %d, Sustained: %d}\n",
-				endpoint,
-				rateChecker.GetBurst(endpoint),
-				rateChecker.GetSustained(endpoint),
-			),
-		)
+		if rateChecker.Increment(endpoint) {
+			io.WriteString(w,
+				fmt.Sprintf(
+					"The rate limit config for endpoint %s is: {Burst: %d, Sustained: %d}, the current usage is %d\n",
+					endpoint,
+					rateChecker.GetBurst(endpoint),
+					rateChecker.GetSustained(endpoint),
+					rateChecker.GetCount(endpoint),
+				),
+			)
+		} else {
+			io.WriteString(w,
+				fmt.Sprintf(
+					"You have reached the rate limit for endpoint %s - %d\n",
+					endpoint,
+					rateChecker.GetBurst(endpoint),
+				),
+			)
+		}
 	} else {
 		io.WriteString(w, fmt.Sprintln("Invalid endpoint in your request body"))
 	}
@@ -71,7 +82,7 @@ func main() {
 	loadConfig(&config)
 
 	rateChecker := RateChecker{
-		rates: map[string]Rate{},
+		rates: make(map[string]*Rate),
 	}
 	initializeRateChecker(&config, &rateChecker)
 

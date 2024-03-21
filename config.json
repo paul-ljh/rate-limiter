@@ -6,7 +6,7 @@
   },
   {
     "endpoint" : "GET users",
-    "burst" : 100,
+    "burst" : 5,
     "sustained" : 60
   }
 ]
