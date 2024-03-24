@@ -52,22 +52,22 @@ func take(w http.ResponseWriter, r *http.Request) {
 	if endpoint == "" {
 		io.WriteString(w, fmt.Sprintln("You must provide endpoint in your request body"))
 	} else if rateChecker.IsEndpointValid(endpoint) {
-		if rateChecker.Increment(endpoint) {
+		if rateChecker.Record(endpoint) {
 			io.WriteString(w,
 				fmt.Sprintf(
-					"The rate limit config for endpoint %s is: {Burst: %d, Sustained: %d}, the current usage is %d\n",
+					"The rate limit config for endpoint %s is: {Burst: %d, Sustained: %d}, the remaining usage is %d\n",
 					endpoint,
 					rateChecker.GetBurst(endpoint),
 					rateChecker.GetSustained(endpoint),
-					rateChecker.GetCount(endpoint),
+					rateChecker.GetRemainingToken(endpoint),
 				),
 			)
 		} else {
 			io.WriteString(w,
 				fmt.Sprintf(
-					"You have reached the rate limit for endpoint %s - %d\n",
-					endpoint,
+					"You have reached the rate limit of %d for endpoint %s\n",
 					rateChecker.GetBurst(endpoint),
+					endpoint,
 				),
 			)
 		}
