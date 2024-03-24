@@ -52,7 +52,7 @@ func take(w http.ResponseWriter, r *http.Request) {
 	if endpoint == "" {
 		io.WriteString(w, fmt.Sprintln("You must provide endpoint in your request body"))
 	} else if rateChecker.IsEndpointValid(endpoint) {
-		if rateChecker.Record(endpoint) {
+		if rateChecker.Consume(endpoint) {
 			io.WriteString(w,
 				fmt.Sprintf(
 					"The rate limit config for endpoint %s is: {Burst: %d, Sustained: %d}, the remaining usage is %d\n",

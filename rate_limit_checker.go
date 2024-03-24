@@ -6,18 +6,24 @@ type Rate struct {
 	RemainingToken int
 }
 
-func (r *Rate) Record() {
+func (r *Rate) Consume() {
 	r.RemainingToken--
+}
+
+func (r *Rate) Replenish() {
+	if r.RemainingToken < r.Burst {
+		r.RemainingToken++
+	}
 }
 
 type RateChecker struct {
 	rates map[string]*Rate
 }
 
-func (r *RateChecker) Record(endpoint string) bool {
+func (r *RateChecker) Consume(endpoint string) bool {
 	rate := r.rates[endpoint]
 	if r.CheckRate(endpoint) {
-		rate.Record()
+		rate.Consume()
 		return true
 	} else {
 		return false
@@ -52,10 +58,12 @@ func (r RateChecker) GetRemainingToken(endpoint string) int {
 
 func initializeRateChecker(config *[]Route, rateChecker *RateChecker) {
 	for _, route := range *config {
-		(*rateChecker).rates[route.Endpoint] = &Rate{
+		r := &Rate{
 			Burst:          route.Burst,
 			Sustained:      route.Sustained,
 			RemainingToken: route.Burst,
 		}
+		(*rateChecker).rates[route.Endpoint] = r
+		go initializeTokenRefiller(route.Sustained, r)
 	}
 }
